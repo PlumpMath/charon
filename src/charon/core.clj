@@ -13,16 +13,13 @@
   (:import
    (java.io PushbackReader)))
 
+(def ^{:private true} edn (atom {}))
+
 (defn trigrams [s]
   (partition 3 1 (s/triml s)))
 
 (defn clean [s]
   (map #(keyword (s/replace (s/join %) #" " "_")) s))
-
-(defn write [f]
-  (with-open [w (writer "index.edn")]
-    (let [s (parse f)]
-      (.write w (prn-str (into (sorted-map) (frequencies (flatten s))))))))
 
 (defn parse [f]
   (->> (iota/seq f)
@@ -31,8 +28,14 @@
        (r/map clean)
        (into [])))
 
+(defn file? [f]
+  (.isFile f))
+
 (defn read-dir [d]
-  (let [dir (file d)
-        files (filter #(.isFile %) (file-seq dir))]
-    (doseq [file files]
-      (add file))))
+  (filter file? (file-seq (file d))))
+
+(defn index [d]
+  (let [files (read-dir d)
+        fl (zipmap files (iterate inc 1))
+        t (map #(parse (.getCanonicalPath %)) (keys fl))]
+    (reset! edn {:file-list fl :trigrams (zipmap (flatten t) (repeat 1))})))
