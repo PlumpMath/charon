@@ -1,0 +1,9 @@
+#!/bin/sh
+
+lein bin
+
+# emacs
+echo "#!/usr/bin/env sh" | cat - target/charon > charon && chmod +x charon
+sudo cp charon /usr/local/bin/
+# windows
+cp -a target/charon charon.bat
