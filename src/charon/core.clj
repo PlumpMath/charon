@@ -3,6 +3,7 @@
    [charon.index :as index]
    [charon.search :as search]
    [clojure.string :as string]
+   [criterium.core :as c]
    [clojure.tools.cli :refer [parse-opts]])
   (:gen-class))
 
