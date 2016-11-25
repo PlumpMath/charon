@@ -2,22 +2,24 @@
   (:require
    [charon.index :as index]
    [clojure.edn :as edn]
-   [clojure.java.io :refer [reader writer file]]
+   [clojure.java.io :refer [reader writer file input-stream]]
    [clojure.set :as set]
-   [clojure.string :as s])
+   [clojure.string :as s]
+   [taoensso.nippy :as n]
+   [clojure.core.reducers :as r])
   (:import
-   (java.io PushbackReader)))
+   (java.io PushbackReader DataInputStream)))
 
 (defn- load-index [d]
-  (with-open [r (PushbackReader. (reader (str d "/index.edn")))]
-    (edn/read r)))
+  (with-open [r (input-stream ".charon/charon.idx")]
+    (n/thaw-from-in! (DataInputStream. r))))
 
 (defn query [s d]
-  (let [index (load-index d)]
-    (map #(get (:file-list index) %)
+  (let [db (load-index d)]
+    (map #(get (:file-list db) %)
          (reduce set/intersection
                  (filter identity
-                         (map #(get (:trigrams index) (s/join %))
+                         (map #(get db %)
                               (index/trigrams s)))))))
 
 (defn search [opts]

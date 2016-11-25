@@ -2,14 +2,15 @@
   (:require
    [clojure.edn :as edn]
    [clojure.core.reducers :as r]
-   [clojure.java.io :refer [reader writer file]]
+   [clojure.java.io :refer [reader writer file output-stream]]
    [clojure.set :as set]
    [clojure.string :as s]
    [clojure.tools.logging :as log]
    [criterium.core :as c]
-   [iota])
+   [iota]
+   [taoensso.nippy :as n])
   (:import
-   (java.io File)))
+   (java.io File DataOutputStream)))
 
 (defn- file-seq-ignore
   [dir exceptions]
@@ -25,7 +26,7 @@
     (map-indexed vector files)))
 
 (defn trigrams [s]
-  (r/map s/join (partition 3 1 s)))
+  (map s/join (partition 3 1 s)))
 
 (defn- utf8? [c]
   (let [ci (int c)
@@ -41,9 +42,6 @@
   (with-open [w (writer (str d "/.charon/index.edn") :encoding "UTF-8")]
     (.write w (pr-str m))))
 
-(defn set-assoc [m k v]
-  (assoc m k (conj (get m k #{}) v)))
-
 (def trigrams-reducer
   (comp
    (r/mapcat trigrams)
@@ -55,6 +53,7 @@
   ([index f]
    (let [file (.getPath ^File (second f))]
      (println file (count index))
+     (assoc index :file-list (conj (get index :file-list []) file))
      (try
        (r/fold
         (fn
@@ -75,7 +74,8 @@
          index)))))
 
 (defn make-index [files]
-  (println (take 5 (r/fold merge index-file files))))
+  (with-open [w (output-stream ".charon/charon.idx")]
+    (n/freeze-to-out! (DataOutputStream. w) (r/fold merge index-file files))))
 
 (defn benchmark [f N times]
   (let [nums (vec (range N))

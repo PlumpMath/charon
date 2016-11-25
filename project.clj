@@ -7,7 +7,8 @@
                  [org.clojure/tools.cli "0.3.5"]
                  [org.clojure/tools.logging "0.3.1"]
                  [criterium "0.4.4"]
-                 [iota "1.1.3"]]
+                 [iota "1.1.3"]
+                 [com.taoensso/nippy "2.12.2"]]
   :plugins [[elastic/lein-bin "0.3.6"]]
   :bin {:name "charon"}
   :global-vars {*warn-on-reflection* true}
