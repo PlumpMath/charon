@@ -10,17 +10,30 @@
   (:import
    (java.io PushbackReader DataInputStream)))
 
+(defn- numbered-line [file]
+  (with-open [r (reader file)]
+    (doall (map vector (iterate inc 1) (line-seq r)))))
+
+(defn- grep-in-file [pattern file]
+  (filter #(re-find pattern (second %)) (numbered-line file)))
+
 (defn- load-index [d]
-  (with-open [r (input-stream ".charon/charon.idx")]
+  (with-open [r (input-stream (str d "/.charon/charon.idx"))]
     (n/thaw-from-in! (DataInputStream. r))))
 
-(defn query [s d]
+(defn- query [s d]
   (let [db (load-index d)]
     (map #(get (:file-list db) %)
          (reduce set/intersection
-                 (filter identity
-                         (map #(get db %)
-                              (index/trigrams s)))))))
+                 (map #(get db %)
+                      (index/trigrams s))))))
+
+(defn- print-matches [pattern files]
+  (println "count: " (count files))
+  (doseq [file files]
+    (println file)
+    (dorun (map #(printf "%s:%s:%s\n" file (first %) (second %)) (grep-in-file (re-pattern pattern) file)))))
 
 (defn search [opts]
-  (println (query (:text opts) (:index opts))))
+  (let [pattern (:text opts)]
+    (print-matches pattern (query pattern (:index opts)))))

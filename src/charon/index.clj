@@ -52,14 +52,13 @@
   ([] {})
   ([index f]
    (let [file (.getPath ^File (second f))]
-     (println file (count index))
-     (assoc index :file-list (conj (get index :file-list []) file))
+     (println file)
      (try
        (r/fold
         (fn
-          ([] index)
+          ([] (assoc-in index [:file-list (first f)] file))
           ([& m]
-           (apply merge m)))
+           (apply merge-with into m)))
         (fn
           [idx term]
           (if (every? utf8? term)
